@@ -51,7 +51,7 @@ async def check_secret(
 
 
 def create_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(title="secret transferring service")
     app.include_router(api_router)
     app.config = Settings()
     app.router.add_event_handler("startup", create_redis(app))
