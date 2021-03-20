@@ -15,4 +15,4 @@ COPY secret_transferring_service /secret_transferring_service
 
 
 
-CMD ["python", "-m", "secret_transferring_service.app"]
+CMD ["uvicorn", "secret_transferring_service.app:app", "--host=0.0.0.0", "--port=5000"]

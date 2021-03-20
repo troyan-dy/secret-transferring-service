@@ -4,5 +4,11 @@ services:
   secret_transferring_service:
     build: .
     ports:
-      - 8000:8000
-    restart: always
+      - 5000:5000
+    env_file:
+      - local.env
+    depends_on:
+      - redis
+
+  redis:
+    image: "redis:alpine"
