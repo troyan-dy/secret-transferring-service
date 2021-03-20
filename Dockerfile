@@ -11,8 +11,8 @@ ENV PYTHONFAULTHANDLER=1 \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY fastapi_app /fastapi_app
+COPY secret_transferring_service /secret_transferring_service
 
 
 
-CMD ["python", "-m", "fastapi_app.app"]
+CMD ["python", "-m", "secret_transferring_service.app"]

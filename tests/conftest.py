@@ -4,7 +4,7 @@ import fastapi
 import pytest
 from async_asgi_testclient import TestClient
 
-from fastapi_app import app
+from secret_transferring_service import app
 
 
 @pytest.fixture
