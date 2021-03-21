@@ -1,27 +1,21 @@
-import hashlib
 import os
 from uuid import uuid4
 
 import uvicorn
 from aioredis.commands import Redis
 from fastapi import APIRouter, Depends, FastAPI, Request
-from pydantic import BaseSettings, Field
 from starlette.responses import PlainTextResponse
 
-from secret_transferring_service.redis_state import create_redis, get_redis_from_app, shutdown_redis
-from secret_transferring_service.types import (
-    CheckSecretRequest,
-    CheckSecretResponse,
-    CreateSecretRequest,
-    CreateSecretResponse,
-)
+from secret_transferring_service.redis_state import (create_redis,
+                                                     get_redis_from_app,
+                                                     shutdown_redis)
+from secret_transferring_service.types import (CheckSecretRequest,
+                                               CheckSecretResponse,
+                                               CreateSecretRequest,
+                                               CreateSecretResponse, Settings)
 from secret_transferring_service.utils import create_key
 
 api_router = APIRouter()
-
-
-class Settings(BaseSettings):
-    redis_dsn: str = Field("redis://redis", env="STACKHERO_REDIS_URL_TLS")
 
 
 @api_router.get("/ping")
@@ -30,7 +24,11 @@ async def ping() -> PlainTextResponse:
 
 
 @api_router.post("/create_secret", response_model=CreateSecretResponse)
-async def create_secret(request: Request, secret_data: CreateSecretRequest, redis: Redis = Depends(get_redis_from_app)):
+async def create_secret(
+    request: Request,
+    secret_data: CreateSecretRequest,
+    redis: Redis = Depends(get_redis_from_app),
+) -> CreateSecretResponse:
     token = str(uuid4())
     key = create_key(password=secret_data.password, token=token)
     await redis.set(key=key, value=secret_data.message)
@@ -40,8 +38,11 @@ async def create_secret(request: Request, secret_data: CreateSecretRequest, redi
 
 @api_router.post("/check_secret/{token}", response_model=CheckSecretResponse)
 async def check_secret(
-    request: Request, token: str, secret_data: CheckSecretRequest, redis: Redis = Depends(get_redis_from_app)
-):
+    request: Request,
+    token: str,
+    secret_data: CheckSecretRequest,
+    redis: Redis = Depends(get_redis_from_app),
+) -> CheckSecretResponse:
     key = create_key(password=secret_data.password, token=token)
     if message := await redis.get(key=key):
         redis.delete(key=key)
@@ -53,7 +54,7 @@ async def check_secret(
 def create_app() -> FastAPI:
     app = FastAPI(title="secret transferring service")
     app.include_router(api_router)
-    app.config = Settings()
+    app.config = Settings()  # type: ignore
     app.router.add_event_handler("startup", create_redis(app))
     app.router.add_event_handler("shutdown", shutdown_redis(app))
 

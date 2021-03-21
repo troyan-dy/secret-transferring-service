@@ -1,6 +1,10 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, BaseSettings, Field, validator
+
+
+class Settings(BaseSettings):
+    redis_dsn: str = Field("redis://redis", env="STACKHERO_REDIS_URL_TLS")
 
 
 class CreateSecretRequest(BaseModel):
