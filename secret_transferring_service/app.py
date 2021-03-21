@@ -5,7 +5,7 @@ from uuid import uuid4
 import uvicorn
 from aioredis.commands import Redis
 from fastapi import APIRouter, Depends, FastAPI, Request
-from pydantic import BaseSettings, RedisDsn
+from pydantic import BaseSettings, Field
 from starlette.responses import PlainTextResponse
 
 from secret_transferring_service.redis_state import create_redis, get_redis_from_app, shutdown_redis
@@ -21,7 +21,7 @@ api_router = APIRouter()
 
 
 class Settings(BaseSettings):
-    redis_dsn: RedisDsn
+    redis_dsn: str = Field("redis://redis", env="STACKHERO_REDIS_URL_TLS")
 
 
 @api_router.get("/ping")
