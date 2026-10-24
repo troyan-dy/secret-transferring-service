@@ -16,6 +16,8 @@ from secret_transferring_service.types import (CheckSecretRequest,
                                                CreateSecretResponse, Settings)
 from secret_transferring_service.utils import create_key
 
+DEFAULT_PORT = 5000
+
 api_router = APIRouter()
 
 
@@ -45,7 +47,8 @@ async def check_secret(
     redis: Redis = Depends(get_redis_from_app),
 ) -> CheckSecretResponse:
     key = create_key(password=secret_data.password, token=token)
-    if message := await redis.get(key):
+    message = await redis.get(key)
+    if message:
         await redis.delete(key)
         # decode_responses=True in the client, so values are str
         return CheckSecretResponse(message=cast(str, message))
@@ -65,5 +68,5 @@ def create_app() -> FastAPI:
 
 app = create_app()
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", DEFAULT_PORT))
     uvicorn.run(app=app, host="0.0.0.0", port=port)

@@ -1,3 +1,6 @@
+from functools import partial
+from typing import Awaitable, Callable
+
 from fastapi import FastAPI, Request
 from redis.asyncio import Redis
 
@@ -13,16 +16,18 @@ async def get_cache_backend(config: Settings) -> Redis:
     return connection
 
 
-def create_redis(app: FastAPI):  # type: ignore
-    async def startup_hook() -> None:
-        app.redis = await get_cache_backend(app.config)  # type: ignore
-
-    return startup_hook
+async def startup_hook(app: FastAPI) -> None:
+    app.redis = await get_cache_backend(app.config)  # type: ignore
 
 
-def shutdown_redis(app: FastAPI):  # type: ignore
-    async def shutdown_hook() -> None:
-        if app.redis is not None:  # type: ignore
-            await app.redis.aclose()  # type: ignore
+async def shutdown_hook(app: FastAPI) -> None:
+    if app.redis is not None:  # type: ignore
+        await app.redis.aclose()  # type: ignore
 
-    return shutdown_hook
+
+def create_redis(app: FastAPI) -> Callable[[], Awaitable[None]]:
+    return partial(startup_hook, app)
+
+
+def shutdown_redis(app: FastAPI) -> Callable[[], Awaitable[None]]:
+    return partial(shutdown_hook, app)
