@@ -1,10 +1,11 @@
 from typing import Optional
 
-from pydantic import BaseModel, BaseSettings, Field, validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    redis_dsn: str = Field("redis://redis", env="STACKHERO_REDIS_URL_TLS")
+    redis_dsn: str = Field("redis://redis", validation_alias="STACKHERO_REDIS_URL_TLS")
 
 
 class CreateSecretRequest(BaseModel):
@@ -12,7 +13,8 @@ class CreateSecretRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=10000)
     password: str
 
-    @validator("password", always=True)
+    @field_validator("password")
+    @classmethod
     def validate_password(cls, value: str) -> str:
         if len(value) < 5 or len(value) > 12:
             raise ValueError("Value must be longer then 4 and shorter then 12")
@@ -31,7 +33,8 @@ class CreateSecretResponse(BaseModel):
 class CheckSecretRequest(BaseModel):
     password: str
 
-    @validator("password", always=True)
+    @field_validator("password")
+    @classmethod
     def validate_password(cls, value: str) -> str:
         if len(value) < 5 or len(value) > 12:
             raise ValueError("Value must be longer then 4 and shorter then 12")
@@ -43,5 +46,5 @@ class CheckSecretRequest(BaseModel):
 
 
 class CheckSecretResponse(BaseModel):
-    message: Optional[str]
+    message: Optional[str] = None
     success: bool = True

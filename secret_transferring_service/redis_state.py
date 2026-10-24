@@ -1,16 +1,15 @@
-from aioredis import create_redis_pool
-from aioredis.commands import Redis
 from fastapi import FastAPI, Request
+from redis.asyncio import Redis
 
 from secret_transferring_service.types import Settings
 
 
 async def get_redis_from_app(request: Request) -> Redis:
-    return request.app.redis
+    return request.app.redis  # type: ignore
 
 
 async def get_cache_backend(config: Settings) -> Redis:
-    connection = await create_redis_pool(config.redis_dsn)
+    connection = Redis.from_url(config.redis_dsn, decode_responses=True)
     return connection
 
 
@@ -24,7 +23,6 @@ def create_redis(app: FastAPI):  # type: ignore
 def shutdown_redis(app: FastAPI):  # type: ignore
     async def shutdown_hook() -> None:
         if app.redis is not None:  # type: ignore
-            app.redis.close()  # type: ignore
-            await app.redis.wait_closed()  # type: ignore
+            await app.redis.aclose()  # type: ignore
 
     return shutdown_hook
