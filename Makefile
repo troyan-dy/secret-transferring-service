@@ -8,6 +8,9 @@ lint:
 	python3 -m mypy secret_transferring_service/
 	python3 -m flake8 secret_transferring_service/ tests/
 
+wps:
+	python3 -m flake8 secret_transferring_service/ tests/ --select=WPS
+
 format:
 	python3 -m black secret_transferring_service/ tests/
 	python3 -m isort secret_transferring_service/ tests/

@@ -24,6 +24,9 @@ else
   "$VENV_DIR/bin/pip" install -r requirements.txt -r resuirements.dev.txt
 fi
 
+# make sure wemake-python-styleguide is available for `make lint` / `make wps`
+"$VENV_DIR/bin/python" -c "import wemake_python_styleguide"
+
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   echo "export VIRTUAL_ENV=\"$VENV_DIR\"" >> "$CLAUDE_ENV_FILE"
   echo "export PATH=\"$VENV_DIR/bin:\$PATH\"" >> "$CLAUDE_ENV_FILE"
