@@ -1,9 +1,10 @@
 import os
+from typing import cast
 from uuid import uuid4
 
 import uvicorn
-from aioredis.commands import Redis
 from fastapi import APIRouter, Depends, FastAPI, Request
+from redis.asyncio import Redis
 from starlette.responses import PlainTextResponse
 
 from secret_transferring_service.redis_state import (create_redis,
@@ -14,6 +15,8 @@ from secret_transferring_service.types import (CheckSecretRequest,
                                                CreateSecretRequest,
                                                CreateSecretResponse, Settings)
 from secret_transferring_service.utils import create_key
+
+DEFAULT_PORT = 5000
 
 api_router = APIRouter()
 
@@ -31,8 +34,8 @@ async def create_secret(
 ) -> CreateSecretResponse:
     token = str(uuid4())
     key = create_key(password=secret_data.password, token=token)
-    await redis.set(key=key, value=secret_data.message)
-    await redis.expire(key=key, timeout=secret_data.expire)
+    await redis.set(key, secret_data.message)
+    await redis.expire(key, secret_data.expire)
     return CreateSecretResponse(token=token, expire=secret_data.expire)
 
 
@@ -44,9 +47,11 @@ async def check_secret(
     redis: Redis = Depends(get_redis_from_app),
 ) -> CheckSecretResponse:
     key = create_key(password=secret_data.password, token=token)
-    if message := await redis.get(key=key):
-        redis.delete(key=key)
-        return CheckSecretResponse(message=message)
+    message = await redis.get(key)
+    if message:
+        await redis.delete(key)
+        # decode_responses=True in the client, so values are str
+        return CheckSecretResponse(message=cast(str, message))
     else:
         return CheckSecretResponse(success=False)
 
@@ -63,5 +68,5 @@ def create_app() -> FastAPI:
 
 app = create_app()
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", DEFAULT_PORT))
     uvicorn.run(app=app, host="0.0.0.0", port=port)
